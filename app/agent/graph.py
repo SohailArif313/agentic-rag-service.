@@ -1,12 +1,12 @@
 from langgraph.graph import END, START, StateGraph
+from pydantic import SecretStr
 
 from app.agent.llm import get_llm
 from app.agent.nodes import AgentNodes
 from app.agent.state import AgentState
 from app.config import Settings
+from app.rag.indexing import ensure_index
 from app.rag.vector_store import get_vector_store
-from langchain_chroma import Chroma
-
 
 def build_graph(llm, vector_store, top_k: int, max_rewrites: int):
     nodes = AgentNodes(llm, vector_store, top_k)
@@ -43,10 +43,12 @@ def build_graph(llm, vector_store, top_k: int, max_rewrites: int):
     return builder.compile()
 
 
-def create_agent(settings: Settings, vector_store: Chroma | None = None):
+def create_agent(settings: Settings, api_key: SecretStr):
+    vector_store = get_vector_store(settings, api_key)
+    ensure_index(settings, vector_store)
     return build_graph(
-        llm=get_llm(settings),
-        vector_store=vector_store or get_vector_store(settings),
+        llm=get_llm(settings, api_key),
+        vector_store=vector_store,
         top_k=settings.top_k,
         max_rewrites=settings.max_rewrites,
     )

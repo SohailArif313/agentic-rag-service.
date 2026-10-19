@@ -1,14 +1,15 @@
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
+from pydantic import SecretStr
 
 from app.config import Settings
 
 
-def get_vector_store(settings: Settings) -> Chroma:
+def get_vector_store(settings: Settings, api_key: SecretStr) -> Chroma:
     embeddings = OpenAIEmbeddings(
         model=settings.embedding_model,
-        api_key=settings.openai_api_key,
+        api_key=api_key,
     )
     return Chroma(
         collection_name=settings.collection_name,
